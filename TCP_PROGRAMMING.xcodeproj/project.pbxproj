@@ -6,10 +6,21 @@
 	objectVersion = 48;
 	objects = {
 
+/* Begin PBXFileReference section */
+		6D5F63FE204F707900622323 /* client.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
+		6D5F63FF204F707900622323 /* client.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = client.c; sourceTree = "<group>"; };
+		6D5F6400204F709500622323 /* server.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = server.h; sourceTree = "<group>"; };
+		6D5F6401204F709500622323 /* server.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = server.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
 /* Begin PBXGroup section */
 		6D5F63F7204F702900622323 = {
 			isa = PBXGroup;
 			children = (
+				6D5F63FE204F707900622323 /* client.h */,
+				6D5F63FF204F707900622323 /* client.c */,
+				6D5F6400204F709500622323 /* server.h */,
+				6D5F6401204F709500622323 /* server.c */,
 			);
 			sourceTree = "<group>";
 		};
