@@ -10,9 +10,7 @@
 #include <sys/types.h>        /*  socket types              */
 #include <arpa/inet.h>        /*  inet (3) funtions         */
 #include <unistd.h>           /*  misc. UNIX functions      */
-
 #include "helper.h"           /*  our own helper functions  */
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -97,9 +95,14 @@ int main(int argc, char *argv[]) {
         
         /*  Retrieve an input line from the connected socket
          then simply write it back to the same socket.     */
+        int size;
+        Readline(conns_s, &size, sizeof(size));
         
-        Readline(conn_s, buffer, MAX_LINE-1);
-        Writeline(conn_s, buffer, strlen(buffer));
+        char buffer[size];
+        
+        Readline(conn_s, buffer, size);
+        //Writeline(conn_s, buffer, strlen(buffer));
+        process_file(buffer, size);
         
         
         /*  Close the connected socket  */
