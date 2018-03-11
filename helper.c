@@ -1,180 +1,66 @@
-//
-//  helper.c
-//  TCP_PROGRAMMING
-//
-//  Created by AakashBasnet on 3/7/18.
-//
+/*
 
+  HELPER.C
+  ========
+  (c) Paul Griffiths, 1999
+  Email: mail@paulgriffiths.net
+
+  Implementation of sockets helper functions.
+
+  Many of these functions are adapted from, inspired by, or 
+  otherwise shamelessly plagiarised from "Unix Network 
+  Programming", W Richard Stevens (Prentice Hall).
+
+*/
+
+//
+//  serv_helper.c
+//
+//
+//  Created by AakashBasnet on 3/10/18.
+//
+#include "stdint.h"
+#include "inttypes.h"
 #include "helper.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
-/*  Read a line from a socket  */
-
-ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
-    ssize_t n, rc;
-    char    c, *buffer;
-    
-    buffer = vptr;
-    
-    for ( n = 0; n < maxlen; n++ ) {
-        
-        if ( (rc = read(sockd, &c, 1)) == 1 ) {
-            buffer[n] = c;
-            if ( c == '\n' )
-                break;
-        }
-        else if ( rc == 0 ) {
-            if ( n == 1 )
-                return 0;
-            else
-                break;
-        }
-        else {
-            if ( errno == EINTR )
-                continue;
-            return -1;
-        }
-    }
-    
-    *buffer = 0;
-    return n;
-}
-
-
-/*  Write a line to a socket  */
-
-ssize_t Writeline(int sockd, const void *vptr, size_t n) {
-    size_t      nleft;
-    ssize_t     nwritten;
-    const char *buffer;
-    
-    buffer = vptr;
-    nleft  = n;
-    
-    while ( nleft > 0 ) {
-        if ( (nwritten = write(sockd, buffer, nleft)) <= 0 ) {
-            if ( errno == EINTR )
-                nwritten = 0;
-            else
-                return -1;
-        }
-        nleft  -= nwritten;
-        buffer += nwritten;
-    }
-    
-    return n;
-}
-
-void convert_to_typeOne(FILE* pointer, uint8_t amount, uint16_t numbers[]){
-    if(convert_option == 3 || convert_option == 2){
-        printf("Converting \n");
-        uint8_t type = 0;
-        //        uint8_t* t = type;
-        //        uint8_t *a = amount;
-        fwrite(&type, sizeof(uint8_t), 1, pointer);
-        fwrite(&amount, sizeof(uint8_t),1, pointer);
-        fwrite(numbers, sizeof(uint16_t), amount, pointer);
-        
-        //        fprintf(pointer, "%d", type);
-        //        fprintf(pointer, "%d", amount);
-        //        int i = 0;
-        //        while(i<amount){
-        //            fprintf(pointer, "%d",numbers+i);
-        //            i++;
-        //        }
-    }
-    else{
-        printf("Just write whatever files we read onto the writefile\n");
-    }
-    printf("Converted\n");
-    
-}
-
-
-void convert_to_typeTwo(FILE* pointer,  uint8_t amount, short first_input){
-    
-    if(convert_option == 3 || convert_option == 1){
-        //        printf("Trying to convert files\n");
-        //        int type = 1;
-        //        int *tp = &type;
-        //        fwrite(tp, sizeof(char), 1, pointer);
-        uint8_t type = 1;
-        printf("I am inside the conversion function\n");
-        fwrite(&type, sizeof(uint8_t), 1, pointer);
-        //fprintf(pointer,"%d",type);
-        printf("I was just about to convert it\n");
-        //        fwrite(&amount, sizeof(uint8_t), 1, pointer);
-        fprintf(pointer, "%d", amount);
-        int i = 0;
-        while(i<amount){
-            //fwrite(amount, sizeof(char),3, pointer);
-            printf("Trying to write files\n");
-            fprintf(pointer,"%d",first_input+i);
-            printf("Not sure if it was succesful\n");
-            if(i<=amount-2){   //if condition to insert comma
-                fprintf(pointer,"%s",",");
-            }
-            i++;
-        }
-    }
-    printf("I think I converted it\n");
-}
+extern int convert_option = 3;
 
 
 
-//int main(){
-//    int length_of_file;
-//
-//    FILE *ptr;
-//    FILE *ptr1;
-//
-//    ptr = fopen("practice_project_test_file_1","rb");
-//    ptr1 = fopen("practice_project_write_file3","wb+");
-//    fseek(ptr1, 0, SEEK_SET);
-//    fseek(ptr, 0, SEEK_END);
-//    length_of_file = ftell(ptr);
-//    printf("The length of file is %d\n",length_of_file);
-//    rewind(ptr);
-//    char buffer[length_of_file];
-//    int num_of_bytes = fread(buffer, length_of_file, 1, ptr);
-//    int j = 0;
-//    int i = 0;
-void process_file(char* buffer, int length_of_file){
+
+void process_file(char* buffer, int length_of_file, FILE* pointer){
+    int i = 0;
     
     while(i < length_of_file){
         printf("The value in buffer is %u\n",buffer[i]);
         if(buffer[i] == 0){
             //printf("Buffer i is %02x and index is %u\n",buffer[i], i);
             printf("The index here in type 1 is %d\n", i);
-            i = first_input_type_to_second(i, buffer,ptr1);
+            i = zero_input_type_to_first(i, buffer,pointer);
             printf("The index returned here in type 1 is %d\n",i);
             
         }
         else if(buffer[i] == 1){
             printf("The index here in type 2 is %d\n",i);
-            i = second_input_type_to_first(i,buffer, ptr1);
+            i = first_input_type_to_zero(i,buffer, pointer);
             printf("The index returned here in type 2 is %d\n",i);
         }
         
     }
-    //    printf("The index here in type 2 is %d\n",i);
-    //    i = second_input_type_to_first(6,buffer, ptr1);
-    //    printf("The index returned here in type 2 is %d\n",i);
     
-    //    printf("The index here in type 1 is %d\n", i);
-    //    i = first_input_type_to_second(23, buffer,ptr1);
-    //    printf("The index returned here in type 1 is %d\n",i);
-    fclose(ptr);
-    fclose(ptr1);
     printf("Succesfully converted and written into the file\n");
-    return 0;
+    
 }
 
 
-int first_input_type_to_second(int pos, char* binary_buffer, FILE* pointer){
+int typezero_input(int pos, char* binary_buffer, FILE* pointer){
     
     FILE* ptr = pointer;
     printf("The index before entering type 1 is %d\n", pos);
@@ -197,16 +83,56 @@ int first_input_type_to_second(int pos, char* binary_buffer, FILE* pointer){
         inner_count = inner_count + 2;
     }
     printf("I fot out of while loop\n");
-    convert_to_typeTwo(ptr, amount, first_input);
+    convert_to_typeOne(ptr, amount, first_input);
     printf("I think I did not reach here\n");
-    //fwrite(first_input, sizeof(short), num_of_units/2 , pointer);  //
-    //printf("The index before returning to main from type 1 is %d\n", count );
+    
     return count;
+}
+
+void convert_to_typeOne(FILE* pointer,  int amount, short first_input){
+    
+    if(convert_option == 3 || convert_option == 1){
+        
+        uint8_t type = 1;
+        printf("I am inside the conversion function\n");
+        fwrite(&type, sizeof(uint8_t), 1, pointer);
+        //fprintf(pointer,"%d",type);
+        printf("I was just about to convert it\n");
+        //        fwrite(&amount, sizeof(uint8_t), 1, pointer);
+        int threebyte_amount = amount;
+        char amount_array[4];
+        uint8_t num;
+        for(int i =3; i>0; --i){
+            num = threebyte_amount % 10;
+            num = num+48;
+            threebyte_amount = threebyte_amount /10;
+            amount_array[i-1] = num;
+            
+        }
+        amount_array[3] = '\0' ; //null character
+        for(int i =0; i<3; i++){
+            fprintf(pointer, "%c", amount_array[i]);
+        }
+        
+        fprintf(pointer, "%d", (short)amount);
+        int i = 0;
+        while(i<amount){
+            
+            printf("Trying to write files\n");
+            fprintf(pointer,"%d",first_input+i);
+            printf("Not sure if it was succesful\n");
+            if(i<=amount-2){   //if condition to insert comma
+                fprintf(pointer,"%s",",");
+            }
+            i++;
+        }
+    }
+    printf("I think I converted it\n");
 }
 
 
 
-int second_input_type_to_first(int pos, char* binary_buffer, FILE *pointer){
+int typefirst_input(int pos, char* binary_buffer, FILE *pointer){
     printf("The index before entering type 2 is %d\n", pos);
     FILE* ptr = pointer;
     int i = pos;
@@ -237,7 +163,7 @@ int second_input_type_to_first(int pos, char* binary_buffer, FILE *pointer){
         else if(binary_buffer[i] == type0 | binary_buffer[i] == type1){
             
             printf("The index before returning to main from type 2 is %d\n", i);
-            convert_to_typeOne(ptr, amount, second_input);
+            convert_to_typeZero(ptr, amount, second_input);
             return i;
         }
         else{
@@ -256,3 +182,87 @@ int second_input_type_to_first(int pos, char* binary_buffer, FILE *pointer){
         }
     }
 }
+
+void convert_to_typeZero(FILE* pointer, short amount, short numbers[]){
+    if(convert_option == 3 || convert_option == 2){
+        printf("Converting \n");
+        uint8_t type = 0;
+        uint8_t amount = (uint8_t) amount;
+        
+        fwrite(&type, sizeof(uint8_t), 1, pointer);
+        fwrite(&amount, sizeof(uint8_t),1, pointer);
+        fwrite(numbers, sizeof(short), amount, pointer);
+        
+        
+    }
+    else{
+        printf("Just write whatever files we read onto the writefile\n");
+    }
+    printf("Converted\n");
+    
+}
+
+
+//ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
+//    ssize_t n, rc;
+//    char    c, *buffer;
+//
+//    buffer = vptr;
+//
+//    for ( n = 1; n < maxlen; n++ ) {
+//
+//        if ( (rc = read(sockd, &c, 1)) == 1 ) {
+//            *buffer++ = c;
+//            if ( c == '\n' )
+//                break;
+//        }
+//        else if ( rc == 0 ) {
+//            if ( n == 1 )
+//                return 0;
+//            else
+//                break;
+//        }
+//        else {
+//            if ( errno == EINTR )
+//                continue;
+//            return -1;
+//        }
+//    }
+//
+//    *buffer = 0;
+//    return n;
+//}
+//
+//
+///*  Write a line to a socket  */
+//
+//ssize_t Writeline(int sockd, const void *vptr, size_t n) {
+//    size_t      nleft;
+//    ssize_t     nwritten;
+//    const char *buffer;
+//
+//    buffer = vptr;
+//    nleft  = n;
+//
+//    while ( nleft > 0 ) {
+//        if ( (nwritten = write(sockd, buffer, nleft)) <= 0 ) {
+//            if ( errno == EINTR )
+//                nwritten = 0;
+//            else
+//                return -1;
+//        }
+//        nleft  -= nwritten;
+//        buffer += nwritten;
+//    }
+//
+//    return n;
+//}
+
+
+
+
+
+
+
+
+
