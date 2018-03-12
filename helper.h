@@ -25,11 +25,11 @@
 
 
 /*  Function declarations  */
-void process_file(char* buffer, int length_of_file, FILE* pointer);
-int typezero_input(int pos, char* binary_buffer, FILE* pointer);
-void convert_to_typeOne(FILE* pointer,  int amount, short first_input);
-int typefirst_input(int pos, char* binary_buffer, FILE *pointer);
-void convert_to_typeZero(FILE* pointer, short amount, short numbers[]);
+void process_file(char* buffer, int length_of_file, char* target_file, char* convert_option);
+int typezero_input(int pos, char* binary_buffer, FILE* pointer, char* convert_option);
+void convert_to_typeOne(FILE* pointer,  uint8_t amount, uint16_t numbers[]);
+int typefirst_input(int pos, char* binary_buffer, FILE *pointer, char* convert_option);
+void convert_to_typeZero(FILE* pointer, uint8_t amount, short numbers[]);
 
 
 ssize_t Readline(int fd, void *vptr, size_t maxlen);

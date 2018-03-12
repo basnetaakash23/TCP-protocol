@@ -30,7 +30,6 @@
 /*  Function declarations  */
 
 
-int ParseCmdLine(int argc, char *argv[], char **szAddress, char **szPort);
 
 
 /*  main()  */
@@ -44,13 +43,23 @@ int main(int argc, char *argv[]) {
     char     *szAddress;             /*  Holds remote IP address   */
     char     *szPort;                /*  Holds remote port         */
     char     *endptr;                /*  for strtol()              */
+    char     *filepath;              /*  Holds the file path       */
+    char     *toFormat;              /*  Holds the value of target file conversion format*/
+    char     *toName;                /*  Holds the name for targetfile */
 
 
     /*  Get command line arguments  */
-
-    ParseCmdLine(argc, argv, &szAddress, &szPort);
-
-
+    if(argc != 6){
+        printf("Incomplete Command Line arguments\n");
+        exit(EXIT_FAILURE);
+        return -1;
+    }
+    szAddress = argv[1];
+    szPort = argv[2];
+    filepath = argv[3];
+    toFormat = argv[4];
+    toName = argv[5];
+    
     /*  Set the remote port  */
 
     port = strtol(szPort, &endptr, 0);
@@ -59,14 +68,12 @@ int main(int argc, char *argv[]) {
 	exit(EXIT_FAILURE);
     }
 	
-
     /*  Create the listening socket  */
 
     if ( (conn_s = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
 	fprintf(stderr, "ECHOCLNT: Error creating listening socket.\n");
 	exit(EXIT_FAILURE);
     }
-
 
     /*  Set all bytes in socket address structure to
         zero, and fill in the relevant data members   */
@@ -94,67 +101,69 @@ int main(int argc, char *argv[]) {
 
     /*  Get string to echo from user  */
 
-    printf("Enter the string to echo: \n");
-    char buffer1[10] = {'a','b','c','d','e','f','g','h','i','j'};
+//    printf("Enter the string to echo: \n");
+//    char buffer1[10] = {'a','b','c','d','e','f','g','h','i','j'};
 //    fgets(buffer, MAX_LINE, stdin);
-    FILE* fp = fopen("practice_project_test_file_1","rb");
+    //store the file length so that can be sent to the client and later use to allocate the length for filename in server
+    uint8_t filename_length = strlen(toName);
+
+    //open the file that we are reading from
+    FILE* fp = fopen(filepath,"rb");
     fseek(fp,0,SEEK_END);
-    uint8_t file_length = ftell(fp);
+    int file_length = ftell(fp);
     rewind(fp);
-    
-    
+
+
+    printf("%d\n", file_length);
+
+
     char file_buffer[file_length];
-    
-    
-    int num_of_items = fread(file_buffer, file_length, 1, fp);
-    
-    printf("The file _length is %d\n",file_length);
-    memcpy(buffer,&file_length,sizeof(int));
-    memcpy(buffer+sizeof(uint8_t),file_buffer, file_length);
-    write(conn_s, buffer, file_length);
-    //Writeline(conn_s, &size, sizeof(size));
-   
-    
-     //Readline(conn_s, &size, sizeof(size));
-    
+
+
+    int num_of_items = fread(file_buffer, 1, file_length, fp);
     
 
+    //just reading the file
+    for (int j=0; j<num_of_items; j++) {
+        printf("%d == %d\n", j+1,file_buffer[j]);
+    }
+
+    //printf("%d\n", num_of_items);
+
+    if (num_of_items <= 1) {
+        printf("Error reading file\n");
+    }
+
+
+    //printf("%c\n", file_buffer[0]);
+    printf("%d the filename length\n",filename_length);
+
+    //copying the address of meta information of the file and the required specification to the server
+    memcpy(buffer, toFormat,1);
+    memcpy(buffer+1, &filename_length,1);
+    memcpy(buffer+2, toName, filename_length);
+    memcpy(buffer+2+filename_length, &file_length, 4);
+    memcpy(buffer+6+filename_length, file_buffer, num_of_items);
+
+    // printf("The file _length is %d\n",file_length);
+    // memcpy(buffer,&file_length,sizeof(uint8_t));
+    // memcpy(buffer+sizeof(uint8_t),&toFormat,sizeof(char));
+    // memcpy(buffer+sizeof(uint8_t)+sizeof(char),&filename_length, sizeof(uint8_t));
+    // memcpy(buffer+ 2* sizeof(uint8_t)+sizeof(char), toName, filename_length);
+    
+    // memcpy(buffer+2*sizeof(uint8_t)+1+filename_length,file_buffer, file_length);
+    
+    write(conn_s, buffer, MAX_LINE);
     /*  Send string to echo server, and retrieve response  */
+    char connection_response[100];
    
-    read(conn_s, file_buffer,file_length);
-
-   
-//    Readline(conn_s, buffer1, size);
-
-
+    read(conn_s, connection_response,100);
     /*  Output echoed string  */
 
-    printf("Echo response: %s \n", buffer1);
-    
-    
+    printf("Echo response: %s \n", connection_response);
     return EXIT_SUCCESS;
 }
 
 
-int ParseCmdLine(int argc, char *argv[], char **szAddress, char **szPort) {
 
-    int n = 1;
-
-    while ( n < argc ) {
-	if ( !strncmp(argv[n], "-a", 2) || !strncmp(argv[n], "-A", 2) ) {
-	    *szAddress = argv[++n];
-	}
-	else if ( !strncmp(argv[n], "-p", 2) || !strncmp(argv[n], "-P", 2) ) {
-	    *szPort = argv[++n];
-	}
-	else if ( !strncmp(argv[n], "-h", 2) || !strncmp(argv[n], "-H", 2) ) {
-	    printf("Usage:\n\n");
-	    printf("    timeclnt -a (remote IP) -p (remote port)\n\n");
-	    exit(EXIT_SUCCESS);
-	}
-	++n;
-    }
-
-    return 0;
-}
 

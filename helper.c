@@ -30,234 +30,226 @@
 #include <string.h>
 
 
-extern int convert_option = 3;
 
 
-
-
-void process_file(char* buffer, int length_of_file, FILE* pointer){
+void process_file(char* buffer, int length_of_file, char* target_file, char* convert_option){
+    printf("We are inside the process file\n");
     int i = 0;
+    char * format_type = convert_option;
+    printf("%c\n",format_type[0]);
+
+    for(int i = 0; i< length_of_file; i++){
+        printf("%d. The character member is %d\n",i+1, buffer[i]);
+    }
+
+
+    FILE* fileptr;
+    char* filename = target_file;
+
+    //printf("%s\n", filename);
+    fileptr = fopen(target_file,"wb");
+    //fseek(fileptr, 0, SEEK_SET);
+    printf("File pointer is created and file is ready to be written\n");
+
+
+    
+    //fseek(fileptr, 0, SEEK_SET);
     
     while(i < length_of_file){
-        printf("The value in buffer is %u\n",buffer[i]);
-        if(buffer[i] == 0){
-            //printf("Buffer i is %02x and index is %u\n",buffer[i], i);
-            printf("The index here in type 1 is %d\n", i);
-            i = zero_input_type_to_first(i, buffer,pointer);
-            printf("The index returned here in type 1 is %d\n",i);
+        while(i < length_of_file){
+            //        printf("The value in buffer is %d\n",buffer[i]);
+            //        printf("The value in buffer is %u\n",buffer[i]);
+            if(buffer[i] == 0){
+                //printf("Buffer i is %02x and index is %u\n",buffer[i], i);
+                //printf("The index here in type 1 is %d\n", i);
+                i = typezero_input(i, buffer,fileptr,format_type);
+                //printf("The index returned here in type 1 is %d\n",i);
+                
+            }
+            else if(buffer[i] == 1){
+                //printf("The index here in type 2 is %d\n",i);
+                i = typefirst_input(i, buffer, fileptr,format_type);
+                //printf("The index returned here in type 2 is %d\n",i);
+            }
+        }
+        printf("Succesfully converted and written into the file\n");
+        //j = typezero_input(31,buffer, ptr1);
+        
+    }
+
+    fclose(fileptr);
+}
+    
+    
+int typezero_input(int pos, char* binary_buffer, FILE* pointer, char* convert_option){
+    char* format_type = convert_option;
+        
+        printf("The index before entering type 0 is %d\n", pos);
+        int size_of_unit = 2;
+        uint8_t amount = binary_buffer[pos+1];          
+        uint16_t first_input[amount];
+        //printf("The number of amount is %d\n",binary_buffer[pos+1]);
+        int count = pos+2;
+        
+        int i = 0;
+        
+        //reversing the byte order because of endianness
+        while(i < amount){
+            first_input[i] = binary_buffer[count]<<8 | binary_buffer[count+1] ;
+            //printf("%d   ...\n", first_input[i]);
+            count = count + 2;
+            i = i + 1;
             
         }
-        else if(buffer[i] == 1){
-            printf("The index here in type 2 is %d\n",i);
-            i = first_input_type_to_zero(i,buffer, pointer);
-            printf("The index returned here in type 2 is %d\n",i);
+        
+        //change the format based on convert options
+        
+        if(format_type[0] == '1' || format_type[0] == '3'){  //conversion from the command line argument
+            convert_to_typeOne(pointer, amount, first_input);
         }
-        
+        else{                   //No conversion
+            uint8_t type = 0;
+            //printf("%d   type\n",type);
+            //printf("%d    amount\n",amount);
+            fwrite(&type, sizeof(uint8_t), 1,pointer);
+            fwrite(&amount, sizeof(uint8_t), 1,pointer);
+            for(int i =0; i<amount; i++){
+                fwrite(&first_input[i], sizeof(short),1, pointer);
+            }
+        }
+        printf("The index before returning from type 0 is %d\n", count);
+        return count;
     }
     
-    printf("Succesfully converted and written into the file\n");
-    
-}
-
-
-int typezero_input(int pos, char* binary_buffer, FILE* pointer){
-    
-    FILE* ptr = pointer;
-    printf("The index before entering type 1 is %d\n", pos);
-    int size_of_unit = 2;
-    int amount = binary_buffer[pos+1];
-    int num_of_units = size_of_unit * binary_buffer[pos+1];
-    
-    short int first_input[num_of_units/2];
-    printf("The number of amount is %d\n",binary_buffer[pos+1]);
-    int count = pos+2;
-    int inner_count = 0;
-    int i = 0;
-    
-    while(inner_count < num_of_units){
-        printf("The binary_buffer is %d\n",binary_buffer[count]);
-        printf("The binary_buffer+1 is %d\n",binary_buffer[count+1]);
-        memcpy(first_input+i, (binary_buffer+count), 2);
-        i = i + 1;
-        count = count + 2;
-        inner_count = inner_count + 2;
-    }
-    printf("I fot out of while loop\n");
-    convert_to_typeOne(ptr, amount, first_input);
-    printf("I think I did not reach here\n");
-    
-    return count;
-}
-
-void convert_to_typeOne(FILE* pointer,  int amount, short first_input){
-    
-    if(convert_option == 3 || convert_option == 1){
-        
+void convert_to_typeOne(FILE* pointer,  uint8_t amount, uint16_t numbers[]){
         uint8_t type = 1;
-        printf("I am inside the conversion function\n");
+        uint8_t comma = 44;
+        //printf("I am inside the conversion function\n");
         fwrite(&type, sizeof(uint8_t), 1, pointer);
-        //fprintf(pointer,"%d",type);
-        printf("I was just about to convert it\n");
-        //        fwrite(&amount, sizeof(uint8_t), 1, pointer);
-        int threebyte_amount = amount;
+        //printf("I was just about to convert it\n");
+        //amount is three bytes in type 1
         char amount_array[4];
-        uint8_t num;
-        for(int i =3; i>0; --i){
-            num = threebyte_amount % 10;
-            num = num+48;
-            threebyte_amount = threebyte_amount /10;
-            amount_array[i-1] = num;
-            
-        }
+        amount_array[0] = 48;
+        amount_array[1] = 48;
+        amount_array[2] = amount;
         amount_array[3] = '\0' ; //null character
-        for(int i =0; i<3; i++){
-            fprintf(pointer, "%c", amount_array[i]);
-        }
-        
-        fprintf(pointer, "%d", (short)amount);
+        fprintf(pointer, "%s", amount_array);
         int i = 0;
         while(i<amount){
-            
-            printf("Trying to write files\n");
-            fprintf(pointer,"%d",first_input+i);
-            printf("Not sure if it was succesful\n");
+            //printf("Trying to write files\n");
+            fprintf(pointer,"%d",numbers[i]);
+            //printf("Not sure if it was succesful\n");
             if(i<=amount-2){   //if condition to insert comma
-                fprintf(pointer,"%s",",");
+                fwrite(&comma, sizeof(uint8_t),1,pointer);
+                
             }
             i++;
-        }
-    }
-    printf("I think I converted it\n");
-}
-
-
-
-int typefirst_input(int pos, char* binary_buffer, FILE *pointer){
-    printf("The index before entering type 2 is %d\n", pos);
-    FILE* ptr = pointer;
-    int i = pos;
-    int amount = (binary_buffer[i+1]-48)*100 + (binary_buffer[i+2]-48)*10 + binary_buffer[i+3]-48;
-    printf("The amount is %d\n",amount);
-    int second_input[amount];    //this is where we store asccii values so that they can be written later on on file
-    
-    i = i + 4;
-    int count = 1;
-    //for counting the numbers of unit of the type 1 and we assume that there is at least one such unit until we find either 0 or a comma.
-    int j  = 0; //working around with concatenating the bytes of ascii values
-    long value = 0;      //this is the variable where we temporarily store the asccii value
-    int num_of_units = 0;
-    int comma = 44;
-    int type0 = 0;
-    int type1 = 1;     //assigning value to type 1
-    int ind = 0;      //this for storing values of numbers in character array
-    
-    while(num_of_units<amount){
-        if(binary_buffer[i] == comma){
-            num_of_units = num_of_units + 1;
-            printf("The value of value is %ld\n",value);
-            second_input[ind] = value;
-            ind = ind + 1;
-            i = i+1;
-            j=0;
-        }
-        else if(binary_buffer[i] == type0 | binary_buffer[i] == type1){
             
-            printf("The index before returning to main from type 2 is %d\n", i);
-            convert_to_typeZero(ptr, amount, second_input);
-            return i;
         }
-        else{
-            if(j>0){
-                value = value*10 + (binary_buffer[i]-48);
-                printf("just the value is for the so on and so forth %ld\n", value);
-                i = i + 1;
-                j = j + 1;
+        
+        //printf("I think I converted it\n");
+    }
+    
+    
+    
+int typefirst_input(int pos, char* binary_buffer, FILE *pointer, char* convert_option){
+        printf("The index before entering type 1 is %d\n", pos);
+    char * format_type = convert_option;
+        FILE* ptr = pointer;
+        int i = pos;
+        uint8_t amount = (binary_buffer[i+1]-48)*100 + (binary_buffer[i+2]-48)*10 + binary_buffer[i+3]-48;
+        char amount_[4];                         //printing three bytes of amount
+//        printf("%d.....\n",binary_buffer[pos+1]);
+//        printf("%d.....\n",binary_buffer[pos+2]);
+//        printf("%d.....\n",binary_buffer[pos+3]);
+        amount_[0] = binary_buffer[pos+1];
+        amount_[1] = binary_buffer[pos+2];
+        amount_[2] = binary_buffer[pos+3];
+        amount_[3] = '\0';
+        //printf("The amount in type 1 is %d\n",amount);
+        uint16_t second_input[amount];    //this is where we store asccii values so that they can be written later on on file
+        
+        i = i + 4;
+        int count = 1;
+        //for counting the numbers of unit of the type 1 and we assume that there is at least one such unit until we find either 0 or a comma.
+        int j  = 0; //working around with concatenating the bytes of ascii values
+        int value = 0;      //this is the variable where we temporarily store the asccii value
+        int num_of_units = 0;
+        int comma = 44;
+        int type0 = 0;
+        int type1 = 1;     //assigning value to type 1
+        int ind = 0;      //this for storing values of numbers in character array
+        
+        while(num_of_units<amount){
+            if(binary_buffer[i] == comma){
+                num_of_units = num_of_units + 1;
+                //printf("The ascii value is %d\n",value);
+                second_input[ind] = value;
+                ind = ind + 1;
+                i = i+1;
+                j=0;
+            }
+            else if(binary_buffer[i] == type0 | binary_buffer[i] == type1){
+                second_input[ind] = value;
+                //printf("The ascii value is %d\n",value);
+                
+                //printf("The index before returning to main from type 1 is %d\n", i);
+                if(format_type[0] == '3' || format_type[0] == '2'){
+                    //                convert_to_typeZero(ptr, amount, second_input);
+                    //printf("Converting \n");
+                    uint8_t type = 0;
+                    fwrite(&type, sizeof(uint8_t), 1, pointer);
+                    fwrite(&amount, sizeof(uint8_t),1, pointer);
+                    for(int i =0; i<amount; i++){
+                        printf("%d............type1\n",second_input[i]);
+                        fwrite(&second_input[i], sizeof(uint16_t),1, pointer);
+                    }
+                }
+                
+                else{                                        //writing to the file in ascii form
+                    uint8_t type = 1;
+                    fwrite(&type, sizeof(uint8_t),1, pointer);
+                    fprintf(pointer, "%s", amount_);
+                    
+                    for(int i = 0; i<amount; i++){
+                        fprintf(pointer,"%d",second_input[i]);
+                    }
+                }
+                
+                return i;
             }
             else{
-                value = binary_buffer[i]-48;
-                printf("just the value is for the first time is  %ld\n", value);
-                j = j+1;
-                i = i+1;
+                if(j>0){
+                    value = value*10 + (binary_buffer[i]-48);
+                    //printf("just the value is for the so on and so forth %ld\n", value);
+                    i = i + 1;
+                    j = j + 1;
+                }
+                else{
+                    value = binary_buffer[i]-48;
+                    //printf("just the value is for the first time is  %ld\n", value);
+                    j = j+1;
+                    i = i+1;
+                }
             }
         }
     }
-}
-
-void convert_to_typeZero(FILE* pointer, short amount, short numbers[]){
-    if(convert_option == 3 || convert_option == 2){
-        printf("Converting \n");
-        uint8_t type = 0;
-        uint8_t amount = (uint8_t) amount;
-        
-        fwrite(&type, sizeof(uint8_t), 1, pointer);
-        fwrite(&amount, sizeof(uint8_t),1, pointer);
-        fwrite(numbers, sizeof(short), amount, pointer);
-        
-        
-    }
-    else{
-        printf("Just write whatever files we read onto the writefile\n");
-    }
-    printf("Converted\n");
     
-}
-
-
-//ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
-//    ssize_t n, rc;
-//    char    c, *buffer;
-//
-//    buffer = vptr;
-//
-//    for ( n = 1; n < maxlen; n++ ) {
-//
-//        if ( (rc = read(sockd, &c, 1)) == 1 ) {
-//            *buffer++ = c;
-//            if ( c == '\n' )
-//                break;
-//        }
-//        else if ( rc == 0 ) {
-//            if ( n == 1 )
-//                return 0;
-//            else
-//                break;
-//        }
-//        else {
-//            if ( errno == EINTR )
-//                continue;
-//            return -1;
-//        }
-//    }
-//
-//    *buffer = 0;
-//    return n;
-//}
-//
-//
-///*  Write a line to a socket  */
-//
-//ssize_t Writeline(int sockd, const void *vptr, size_t n) {
-//    size_t      nleft;
-//    ssize_t     nwritten;
-//    const char *buffer;
-//
-//    buffer = vptr;
-//    nleft  = n;
-//
-//    while ( nleft > 0 ) {
-//        if ( (nwritten = write(sockd, buffer, nleft)) <= 0 ) {
-//            if ( errno == EINTR )
-//                nwritten = 0;
-//            else
-//                return -1;
-//        }
-//        nleft  -= nwritten;
-//        buffer += nwritten;
-//    }
-//
-//    return n;
-//}
-
+void convert_to_typeZero(FILE* pointer, uint8_t amount, short numbers[]){
+    
+            //printf("Converting \n");
+            uint8_t type = 0;
+            fwrite(&type, sizeof(uint8_t), 1, pointer);
+            fwrite(&amount, sizeof(uint8_t),1, pointer);
+            for(int i =0; i<amount; i++){
+                //printf("%d............type0\n",numbers[i]);
+                fwrite(&numbers[i], sizeof(short),1, pointer);
+            }
+    
+    
+        //printf("Converted\n");
+        
+    }
 
 
 
